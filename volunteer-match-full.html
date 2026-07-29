@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find Your Role | INMA Volunteer Matching</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Barlow', sans-serif; background-color: #FFFFFF; color: #1A1A2E; }
+    button { font-family: 'Barlow Semi Condensed', sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <script type="text/babel">
+    const { useState } = React;
+
+    const COLORS = {
+      navy: "#002060", blue: "#00417B", gold: "#FFBA08", white: "#FFFFFF",
+      lightBg: "#F0F4F8", lightGold: "#FFF8E1", text: "#1A1A2E",
+      textLight: "#4A5568", border: "#CBD5E0",
+    };
+
+    const sections = [
+      {
+        id: "time", title: "Time & Commitment",
+        subtitle: "Let's start with what fits your life right now.",
+        questions: [
+          { id: "hours", text: "How many hours per month can you reliably give?", type: "single",
+            options: ["2\u20134 hours", "5\u201310 hours", "10+ hours"] },
+          { id: "commitment", text: "What kind of involvement works for you?", type: "single",
+            options: ["An ongoing role with regular responsibilities", "Sign up for specific events as they come", "Either \u2014 depends on what it is"] },
+          { id: "availability", text: "When are you most available?", type: "multi",
+            options: ["Weekday daytime", "Weekday evenings", "Weekends", "Flexible"] },
+        ],
+      },
+      {
+        id: "interaction", title: "Interaction Comfort",
+        subtitle: "How you prefer to connect with people.",
+        questions: [
+          { id: "strangers", text: "How comfortable are you approaching people you don't know?", type: "single",
+            options: ["Very comfortable", "Somewhat comfortable", "Not comfortable", "Depends on the setting"] },
+          { id: "commStyle", text: "How do you prefer to communicate with people outside your circle?", type: "multi",
+            options: ["In person", "Phone", "Text or digital", "Written materials"] },
+          { id: "groupSize", text: "Would you rather talk to one person at a time or address a group?", type: "single",
+            options: ["One-on-one", "Small group", "Either", "Neither \u2014 I prefer behind-the-scenes work"] },
+          { id: "facilitating", text: "How do you feel about facilitating or leading a meeting?", type: "single",
+            options: ["I'd enjoy it", "I could do it with support", "Not for me"] },
+        ],
+      },
+      {
+        id: "environment", title: "Environment & Preferences",
+        subtitle: "What works for you practically.",
+        questions: [
+          { id: "walking", text: "Can you walk a neighborhood for 1\u20132 hours?", type: "single",
+            options: ["Yes", "With limitations", "No"] },
+          { id: "standing", text: "Can you stand at a table or booth for a few hours?", type: "single",
+            options: ["Yes", "With limitations", "No"] },
+          { id: "location", text: "Do you prefer working from home or being on-site?", type: "single",
+            options: ["On-site", "Home", "A mix of both"] },
+          { id: "transport", text: "Do you have reliable transportation to events?", type: "single",
+            options: ["Yes", "Sometimes", "No, but I'd come if someone picked me up"] },
+        ],
+      },
+      {
+        id: "orientation", title: "Role Orientation",
+        subtitle: "What kind of contribution fits you.",
+        questions: [
+          { id: "roleType", text: "Which sounds more like you?", type: "single",
+            options: ["I want to own a function \u2014 plan it, run it, be the point person", "I want to show up and do specific tasks well", "I want to work independently on projects and deliver them", "I'm not sure yet \u2014 show me what's needed"] },
+          { id: "recruiting", text: "Are you comfortable recruiting other volunteers?", type: "single",
+            options: ["Yes", "I'd do it within my own network", "No"] },
+          { id: "representing", text: "Would you represent INMA to an outside organization or campaign?", type: "single",
+            options: ["Yes", "With training or a partner", "Not my strength"] },
+        ],
+      },
+      {
+        id: "barriers", title: "What Would Make This Easier",
+        subtitle: "We want to support you in finding your place.",
+        questions: [
+          { id: "heldBack", text: "Have you held back from volunteering for something? What got in the way?", type: "multi",
+            options: ["I wasn't sure what the role involved day-to-day", "I was worried about being asked to do more than I signed up for", "I didn't want to commit and then not follow through", "I wasn't sure I'd be good at it", "I wanted training but didn't want to seem like I was volunteering by asking", "The time or location didn't work for me", "I just haven't found the right fit yet"] },
+          { id: "training", text: "If training were available, what would make you more likely to attend?", type: "multi",
+            options: ["Knowing that attending doesn't commit me to anything", "A short session (under an hour)", "Watching someone else do it first before I try", "Going with a friend or partner", "Having a specific, limited task to try afterward", "Written materials I can review on my own time"] },
+          { id: "promises", text: "Which of these would you want the group to promise?", type: "multi",
+            options: ["You can try a role once with no obligation to continue", "You can say no to any specific ask without explanation", "Your preferences from this survey will be respected", "Someone will check in with you after your first experience"] },
+        ],
+      },
+      {
+        id: "skills", title: "Skills & Interests",
+        subtitle: "What you bring \u2014 or want to learn.",
+        questions: [
+          { id: "skillAreas", text: "Which of these interest you? Select all that apply.", type: "multi",
+            options: ["Writing or editing (newsletters, emails, social posts, talking points)", "Graphic design or visual materials (flyers, signs, handouts)", "Data, spreadsheets, or tracking results", "Event planning and logistics", "Training or coaching other volunteers", "Social media management", "Research (finding events, vetting information)", "Photography or documentation", "Translation or interpretation", "Providing food, supplies, or materials for events", "Giving rides to volunteers or voters"] },
+        ],
+      },
+      {
+        id: "energy", title: "Energy & Sustainability",
+        subtitle: "What keeps you going \u2014 and what doesn't.",
+        questions: [
+          { id: "energizes", text: "What energizes you most?", type: "single",
+            options: ["Seeing direct impact on voters", "Working with a team", "Solving a logistical problem", "Creating something others use", "Learning something new"] },
+          { id: "drains", text: "What drains you fastest?", type: "single",
+            options: ["Repetitive tasks", "Conflict or confrontation", "Ambiguity about what to do", "Too many meetings", "Working alone"] },
+        ],
+      },
+    ];
+
+    function computeResults(answers) {
+      const roles = [];
+      const commitment = answers.commitment;
+      const roleType = answers.roleType;
+      const strangers = answers.strangers;
+      const walking = answers.walking;
+      const standing = answers.standing;
+      const location = answers.location;
+      const facilitating = answers.facilitating;
+      const representing = answers.representing;
+      const recruiting = answers.recruiting;
+      const skills = answers.skillAreas || [];
+
+      const isOwner = roleType === "I want to own a function \u2014 plan it, run it, be the point person";
+      const isUnsure = roleType === "I'm not sure yet \u2014 show me what's needed";
+      const comfortableWithStrangers = strangers === "Very comfortable" || strangers === "Somewhat comfortable";
+      const canWalk = walking === "Yes" || walking === "With limitations";
+      const canStand = standing === "Yes" || standing === "With limitations";
+      const canFacilitate = facilitating === "I'd enjoy it" || facilitating === "I could do it with support";
+      const canRepresent = representing === "Yes" || representing === "With training or a partner";
+      const prefersOnsite = location === "On-site" || location === "A mix of both";
+      const prefersHome = location === "Home" || location === "A mix of both";
+      const ongoingOk = commitment === "An ongoing role with regular responsibilities" || commitment === "Either \u2014 depends on what it is";
+
+      if (isOwner || isUnsure) {
+        if (canFacilitate && ongoingOk) roles.push({ title: "Committee Co-Chair", type: "Leadership", desc: "Host regular meetings and gatherings for information sharing and planning. You'd set agendas, keep the group aligned, and be a point of contact.", match: "strong" });
+        if (canRepresent && ongoingOk) roles.push({ title: "Statewide Coalition Liaison", type: "Leadership", desc: "Represent INMA on the biweekly statewide working group. Share strategies, bring back resources and information, connect local needs to national support.", match: "strong" });
+        if (canRepresent && comfortableWithStrangers) roles.push({ title: "Campaign Liaison", type: "Leadership", desc: "Connect with candidate campaigns to identify volunteer opportunities and coordinate INMA volunteers to campaign events. Focuses on 3 state house races.", match: "strong" });
+        if (prefersOnsite && (recruiting === "Yes" || recruiting === "I'd do it within my own network")) roles.push({ title: "Voter Contact Event Coordinator", type: "Leadership", desc: "Set up canvassing and phone banking events, recruit volunteers, promote events, and be the welcoming face when people arrive.", match: "strong" });
+      }
+
+      if (comfortableWithStrangers && canWalk && prefersOnsite) roles.push({ title: "Door Knocker / Canvasser", type: "Voter Contact", desc: "Walk a neighborhood and talk to voters at their doors. Training provided. You choose when and how often.", match: walking === "Yes" ? "strong" : "possible" });
+      if (comfortableWithStrangers && canStand) roles.push({ title: "Voter Registration Table Staff", type: "Voter Contact", desc: "Staff a registration table at a community event. Greet people, answer questions, help them register. Bounded time, specific event.", match: "strong" });
+      if ((answers.commStyle || []).includes("Phone") && comfortableWithStrangers) roles.push({ title: "Phone Banker", type: "Voter Contact", desc: "Call voters from a provided list using a script. Can be done from home. You choose the shift.", match: "strong" });
+      if ((answers.commStyle || []).includes("Text or digital") && prefersHome) roles.push({ title: "Text Banker", type: "Voter Contact", desc: "Send text messages to voters from a provided script. Done from home on your own schedule.", match: "strong" });
+      if (canStand && prefersOnsite) roles.push({ title: "Poll Greeter", type: "Voter Contact", desc: "Welcome voters at polling locations on Election Day. A specific, bounded commitment with high visibility.", match: comfortableWithStrangers ? "strong" : "possible" });
+
+      if (skills.some((s) => s.includes("Writing")) || skills.some((s) => s.includes("Social media"))) roles.push({ title: "Communications & Content", type: "Behind the Scenes", desc: "Write newsletters, social media posts, talking points, or email updates. Work on your own schedule and deliver finished pieces.", match: "strong" });
+      if (skills.some((s) => s.includes("Graphic design"))) roles.push({ title: "Materials Designer", type: "Behind the Scenes", desc: "Design flyers, signs, handouts, and visual materials. Independent project work with clear deliverables.", match: "strong" });
+      if (skills.some((s) => s.includes("Data"))) roles.push({ title: "Data & Tracking Support", type: "Behind the Scenes", desc: "Manage voter files, track canvass results, maintain spreadsheets. Detail-oriented work that directly supports the field team.", match: "strong" });
+      if (skills.some((s) => s.includes("Event planning"))) roles.push({ title: "Event Logistics", type: "Behind the Scenes", desc: "Handle setup, supplies, scheduling, and coordination for voter contact events. Keep the operation running smoothly.", match: "strong" });
+      if (skills.some((s) => s.includes("Research"))) roles.push({ title: "Event Scout & Researcher", type: "Behind the Scenes", desc: "Find community events where INMA could set up voter registration tables. Research, secure vendor spots, and recruit table staff.", match: "strong" });
+      if (skills.some((s) => s.includes("Training"))) roles.push({ title: "Volunteer Trainer / Coach", type: "Behind the Scenes", desc: "Help onboard new volunteers, run practice sessions, and coach canvassers. Your experience helps others build confidence.", match: "strong" });
+      if (skills.some((s) => s.includes("Translation"))) roles.push({ title: "Language & Accessibility Support", type: "Behind the Scenes", desc: "Translate materials or interpret at events. Help INMA reach community members in their own language.", match: "strong" });
+      if (skills.some((s) => s.includes("Photography"))) roles.push({ title: "Documentation & Photography", type: "Behind the Scenes", desc: "Photograph events, document activities, help build visual records of the group's work for communications and social media.", match: "strong" });
+      if (skills.some((s) => s.includes("Giving rides")) || skills.some((s) => s.includes("Providing food"))) roles.push({ title: "Logistics Support", type: "Behind the Scenes", desc: "Provide rides to volunteers or voters, bring food and supplies to events. Essential support that keeps everything running.", match: "strong" });
+
+      if (!comfortableWithStrangers && (answers.commStyle || []).includes("In person")) roles.push({ title: "Relational Organizer", type: "Voter Contact", desc: "Talk to people you already know \u2014 friends, family, neighbors, coworkers \u2014 about voting and candidates. No strangers, no scripts. Your own conversations.", match: "strong" });
+
+      if (roles.length === 0) roles.push({ title: "Let's talk", type: "Exploring", desc: "Your combination of preferences is unique, and we'd like to find the right fit. A group leader will reach out to have a conversation about where you could contribute comfortably.", match: "possible" });
+
+      const typeOrder = ["Leadership", "Voter Contact", "Behind the Scenes", "Exploring"];
+      roles.sort((a, b) => {
+        if (a.match !== b.match) return a.match === "strong" ? -1 : 1;
+        return typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type);
+      });
+      const seen = new Set();
+      return roles.filter((r) => { if (seen.has(r.title)) return false; seen.add(r.title); return true; });
+    }
+
+    function ProgressBar({ current, total }) {
+      const pct = ((current + 1) / total) * 100;
+      return (
+        <div style={{ width: "100%", height: 6, backgroundColor: COLORS.border, borderRadius: 3, marginBottom: 32 }}>
+          <div style={{ width: pct + "%", height: "100%", backgroundColor: COLORS.gold, borderRadius: 3, transition: "width 0.3s ease" }} />
+        </div>
+      );
+    }
+
+    function Question({ question, answer, onChange }) {
+      const isSingle = question.type === "single";
+      const selected = answer || (isSingle ? null : []);
+      const handleSelect = (option) => {
+        if (isSingle) { onChange(option); }
+        else {
+          const arr = Array.isArray(selected) ? selected : [];
+          onChange(arr.includes(option) ? arr.filter((o) => o !== option) : [...arr, option]);
+        }
+      };
+      return (
+        <div style={{ marginBottom: 32 }}>
+          <p style={{ fontSize: 17, fontWeight: 600, color: COLORS.navy, marginBottom: 4, lineHeight: 1.4, fontFamily: "'Barlow Semi Condensed', 'Barlow', sans-serif" }}>{question.text}</p>
+          {!isSingle && <p style={{ fontSize: 13, color: COLORS.textLight, marginBottom: 12, marginTop: 0 }}>Select all that apply</p>}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: isSingle ? 12 : 0 }}>
+            {question.options.map((option) => {
+              const isSelected = isSingle ? selected === option : Array.isArray(selected) && selected.includes(option);
+              return (
+                <button key={option} onClick={() => handleSelect(option)} style={{
+                  display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px",
+                  border: "2px solid " + (isSelected ? COLORS.blue : COLORS.border), borderRadius: 8,
+                  backgroundColor: isSelected ? "#E8EEF4" : COLORS.white, cursor: "pointer",
+                  textAlign: "left", fontSize: 15, lineHeight: 1.4, color: COLORS.text,
+                  fontFamily: "'Barlow', sans-serif", transition: "all 0.15s ease",
+                }}>
+                  <span style={{
+                    width: 20, height: 20, minWidth: 20, borderRadius: isSingle ? "50%" : 4,
+                    border: "2px solid " + (isSelected ? COLORS.blue : COLORS.border),
+                    backgroundColor: isSelected ? COLORS.blue : "transparent",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    marginTop: 1, transition: "all 0.15s ease",
+                  }}>
+                    {isSelected && <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 4" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                  </span>
+                  <span>{option}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    function RoleCard({ role }) {
+      const typeColors = {
+        Leadership: { bg: "#FFF8E1", border: COLORS.gold, label: COLORS.navy },
+        "Voter Contact": { bg: "#E8EEF4", border: COLORS.blue, label: COLORS.blue },
+        "Behind the Scenes": { bg: "#F0F4F8", border: COLORS.border, label: COLORS.textLight },
+        Exploring: { bg: "#FFF8E1", border: COLORS.gold, label: COLORS.navy },
+      };
+      const c = typeColors[role.type] || typeColors["Behind the Scenes"];
+      return (
+        <div style={{ padding: "20px 24px", borderLeft: "4px solid " + c.border, backgroundColor: c.bg, borderRadius: "0 8px 8px 0", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: c.label, fontFamily: "'Barlow Semi Condensed', sans-serif" }}>{role.type}</span>
+            {role.match === "strong" && <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.blue, backgroundColor: "#D6E4F0", padding: "2px 8px", borderRadius: 4, fontFamily: "'Barlow Semi Condensed', sans-serif" }}>Strong match</span>}
+          </div>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: COLORS.navy, margin: "0 0 8px 0", fontFamily: "'Barlow Semi Condensed', sans-serif" }}>{role.title}</h3>
+          <p style={{ fontSize: 14, lineHeight: 1.5, color: COLORS.text, margin: 0, fontFamily: "'Barlow', sans-serif" }}>{role.desc}</p>
+        </div>
+      );
+    }
+
+    function BarriersSummary({ answers }) {
+      const barriers = answers.heldBack || [];
+      const promises = answers.promises || [];
+      if (barriers.length === 0 && promises.length === 0) return null;
+      return (
+        <div style={{ padding: "20px 24px", backgroundColor: "#FFF8E1", borderRadius: 8, border: "1px solid " + COLORS.gold, marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: COLORS.navy, margin: "0 0 12px 0", fontFamily: "'Barlow Semi Condensed', sans-serif" }}>What we heard from you</h3>
+          {barriers.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ fontSize: 14, color: COLORS.text, margin: "0 0 8px 0", fontWeight: 600, fontFamily: "'Barlow', sans-serif" }}>What's gotten in the way:</p>
+              {barriers.map((b) => <p key={b} style={{ fontSize: 13, color: COLORS.textLight, margin: "0 0 4px 0", paddingLeft: 12, fontFamily: "'Barlow', sans-serif", lineHeight: 1.4 }}>{"\u2022"} {b}</p>)}
+            </div>
+          )}
+          {promises.length > 0 && (
+            <div>
+              <p style={{ fontSize: 14, color: COLORS.text, margin: "0 0 8px 0", fontWeight: 600, fontFamily: "'Barlow', sans-serif" }}>What you'd like us to promise:</p>
+              {promises.map((p) => <p key={p} style={{ fontSize: 13, color: COLORS.textLight, margin: "0 0 4px 0", paddingLeft: 12, fontFamily: "'Barlow', sans-serif", lineHeight: 1.4 }}>{"\u2713"} {p}</p>)}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function App() {
+      const [currentSection, setCurrentSection] = useState(-1);
+      const [answers, setAnswers] = useState({});
+      const [showResults, setShowResults] = useState(false);
+
+      const handleAnswer = (qid, val) => setAnswers((prev) => ({ ...prev, [qid]: val }));
+      const currentQuestions = currentSection >= 0 ? sections[currentSection].questions : [];
+      const requiredAnswered = currentSection >= 0 && currentQuestions.every((q) => q.type === "single" ? answers[q.id] != null : true);
+      const results = showResults ? computeResults(answers) : [];
+
+      const handleNext = () => {
+        if (currentSection < sections.length - 1) setCurrentSection(currentSection + 1);
+        else setShowResults(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+      const handleBack = () => {
+        if (currentSection > 0) setCurrentSection(currentSection - 1);
+        else if (currentSection === 0) setCurrentSection(-1);
+      };
+      const handleRestart = () => { setAnswers({}); setCurrentSection(-1); setShowResults(false); };
+
+      // Welcome
+      if (currentSection === -1) {
+        return (
+          <div style={{ maxWidth: 640, margin: "0 auto", padding: "40px 24px", fontFamily: "'Barlow', sans-serif" }}>
+            <div style={{ backgroundColor: COLORS.navy, borderRadius: 12, padding: "40px 32px", marginBottom: 32, textAlign: "center" }}>
+              <h1 style={{ fontSize: 28, fontWeight: 800, color: COLORS.gold, margin: "0 0 8px 0", fontFamily: "'Barlow Semi Condensed', sans-serif", letterSpacing: "0.02em" }}>Find Your Role</h1>
+              <p style={{ fontSize: 15, color: COLORS.white, margin: 0, opacity: 0.9 }}>INMA Volunteer Matching Assessment</p>
+            </div>
+            <p style={{ fontSize: 16, lineHeight: 1.6, color: COLORS.text, marginBottom: 16 }}>
+              The 2028 redistricting will redraw Georgia's House districts. If we don't flip these seats before the new maps, the opportunity closes. Every one of us needs to step up, and we need you contributing where you're strongest.
+            </p>
+            <p style={{ fontSize: 16, lineHeight: 1.6, color: COLORS.text, marginBottom: 16 }}>
+              The most important thing you can do right now is identify where you are willing to keep working through November. Not a sprint. A sustained effort, at a pace and in a role that fits your comfort level so you don't burn out before the finish line. We need people who stay, not people who flame out.
+            </p>
+            <p style={{ fontSize: 16, lineHeight: 1.6, color: COLORS.text, marginBottom: 16 }}>
+              This assessment takes about 5 minutes. It matches you to roles based on your preferences, comfort level, skills, and availability. Your answers help us understand what you bring and what you need from us to keep going.
+            </p>
+            <p style={{ fontSize: 15, lineHeight: 1.6, color: COLORS.blue, fontWeight: 600, marginBottom: 32, padding: "16px 20px", backgroundColor: "#E8EEF4", borderRadius: 8 }}>
+              Taking this assessment does not commit you to anything. You can say no to any ask, anytime, without explanation. But we hope you'll find something here that fits, because we need you in this through November.
+            </p>
+            <button onClick={() => setCurrentSection(0)} style={{
+              width: "100%", padding: "16px 24px", backgroundColor: COLORS.navy, color: COLORS.white,
+              border: "none", borderRadius: 8, fontSize: 17, fontWeight: 700, cursor: "pointer",
+              fontFamily: "'Barlow Semi Condensed', sans-serif", letterSpacing: "0.02em",
+            }}>Get Started</button>
+          </div>
+        );
+      }
+
+      // Results
+      if (showResults) {
+        const strongMatches = results.filter((r) => r.match === "strong");
+        const possibleMatches = results.filter((r) => r.match === "possible");
+        return (
+          <div style={{ maxWidth: 640, margin: "0 auto", padding: "40px 24px", fontFamily: "'Barlow', sans-serif" }}>
+            <div style={{ backgroundColor: COLORS.navy, borderRadius: 12, padding: "32px 32px", marginBottom: 32, textAlign: "center" }}>
+              <h1 style={{ fontSize: 24, fontWeight: 800, color: COLORS.gold, margin: "0 0 8px 0", fontFamily: "'Barlow Semi Condensed', sans-serif" }}>Your Results</h1>
+              <p style={{ fontSize: 15, color: COLORS.white, margin: 0, opacity: 0.9 }}>Based on your preferences, here's where you'd make the most difference between now and November.</p>
+            </div>
+            <BarriersSummary answers={answers} />
+            {strongMatches.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.navy, marginBottom: 16, fontFamily: "'Barlow Semi Condensed', sans-serif" }}>Strongest matches</h2>
+                {strongMatches.map((role) => <RoleCard key={role.title} role={role} />)}
+              </div>
+            )}
+            {possibleMatches.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.navy, marginBottom: 16, fontFamily: "'Barlow Semi Condensed', sans-serif" }}>Worth considering</h2>
+                {possibleMatches.map((role) => <RoleCard key={role.title} role={role} />)}
+              </div>
+            )}
+            <div style={{ padding: "20px 24px", backgroundColor: "#E8EEF4", borderRadius: 8, marginBottom: 24 }}>
+              <p style={{ fontSize: 14, lineHeight: 1.5, color: COLORS.text, margin: 0 }}>
+                You can try any of these once with no obligation to continue. Your preferences will be respected. If none of these feel right, tell us and we'll find a fit together. What matters is that you're in this through November, doing something that works for you.
+              </p>
+            </div>
+            <button onClick={handleRestart} style={{
+              width: "100%", padding: "14px 24px", backgroundColor: "transparent", color: COLORS.blue,
+              border: "2px solid " + COLORS.blue, borderRadius: 8, fontSize: 15, fontWeight: 600,
+              cursor: "pointer", fontFamily: "'Barlow Semi Condensed', sans-serif",
+            }}>Start Over</button>
+          </div>
+        );
+      }
+
+      // Questions
+      const section = sections[currentSection];
+      return (
+        <div style={{ maxWidth: 640, margin: "0 auto", padding: "40px 24px", fontFamily: "'Barlow', sans-serif" }}>
+          <ProgressBar current={currentSection} total={sections.length} />
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: COLORS.navy, margin: "0 0 4px 0", fontFamily: "'Barlow Semi Condensed', sans-serif" }}>{section.title}</h2>
+            <p style={{ fontSize: 15, color: COLORS.textLight, margin: 0 }}>{section.subtitle}</p>
+          </div>
+          {section.questions.map((q) => <Question key={q.id} question={q} answer={answers[q.id]} onChange={(val) => handleAnswer(q.id, val)} />)}
+          <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+            <button onClick={handleBack} style={{
+              padding: "14px 24px", backgroundColor: "transparent", color: COLORS.textLight,
+              border: "1px solid " + COLORS.border, borderRadius: 8, fontSize: 15, fontWeight: 600,
+              cursor: "pointer", fontFamily: "'Barlow Semi Condensed', sans-serif",
+            }}>Back</button>
+            <button onClick={handleNext} disabled={!requiredAnswered} style={{
+              flex: 1, padding: "14px 24px",
+              backgroundColor: requiredAnswered ? COLORS.navy : COLORS.border,
+              color: requiredAnswered ? COLORS.white : COLORS.textLight,
+              border: "none", borderRadius: 8, fontSize: 15, fontWeight: 700,
+              cursor: requiredAnswered ? "pointer" : "not-allowed",
+              fontFamily: "'Barlow Semi Condensed', sans-serif", transition: "all 0.15s ease",
+            }}>{currentSection === sections.length - 1 ? "See My Results" : "Next"}</button>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
